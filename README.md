@@ -3,9 +3,9 @@
 Examples for a blog series on [vitaliy.org](https://www.vitaliy.org) about running Windows
 containers without Docker, going one layer down at a time:
 
-1. What is inside a running Windows container: the server silo, `hcsdiag`, image layers on disk,
+1. containerd without Kubernetes: a manual install, `ctr`, the `nat` CNI plugin, nerdctl.
+2. What is inside a running Windows container: the server silo, `hcsdiag`, image layers on disk,
    `sandbox.vhdx`, the `wcifs` and `bindflt` filters.
-2. containerd without Kubernetes: a manual install, `ctr`, the `nat` CNI plugin, nerdctl.
 3. Below containerd: `runhcs.exe`, an OCI bundle and `config.json` written by hand, `wclayer`.
 4. A container without a runtime: a compute system through the HCS API and networking through HNS.
 5. Hyper-V isolation from the inside: the utility VM.
