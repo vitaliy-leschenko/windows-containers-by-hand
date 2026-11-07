@@ -1,0 +1,20 @@
+{
+    "cniVersion": "0.3.0",
+    "name": "nat",
+    "plugins": [
+        {
+            "type": "nat",
+            "master": "Ethernet",
+            "ipam": {
+                "subnet": "172.30.0.0/16",
+                "routes": [
+                    { "gateway": "172.30.0.1" }
+                ]
+            },
+            "capabilities": {
+                "portMappings": true,
+                "dns": true
+            }
+        }
+    ]
+}
