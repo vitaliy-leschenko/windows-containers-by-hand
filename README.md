@@ -9,7 +9,8 @@ containers without Docker, going one layer down at a time:
    `sandbox.vhdx`, the `wcifs` and `bindflt` filters.
 4. An image without containerd: the registry API, digests and diff_ids, `wclayer`, and what
    containerd hands to the shim.
-5. A container without a runtime: a compute system through the HCS API and networking through HNS.
+5. A container without a runtime: `hcsctl`, a small C# tool over `computecore.dll` and
+   `computenetwork.dll`, HCS documents written by hand, and a tiny runtime in two scripts.
 6. Hyper-V isolation from the inside: the utility VM.
 7. An image without Docker: a layer from a folder, a manifest and an index with `os.version`.
 
