@@ -11,8 +11,9 @@ containers without Docker, going one layer down at a time:
    containerd hands to the shim.
 5. A container without a runtime: `hcsctl`, a small C# tool over `computecore.dll` and
    `computenetwork.dll`, HCS documents written by hand, and a tiny runtime in two scripts.
-6. Hyper-V isolation from the inside: the utility VM.
-7. An image without Docker: a layer from a folder, a manifest and an index with `os.version`.
+6. Hyper-V isolation from the inside: the utility VM, its kernel from the image, a 2019 image on 2025.
+7. An image without Docker: a layer from a folder with `wclayer export`, an OCI image layout with
+   an index per `os.version`, a push with the OCI distribution API to a registry built from source.
 
 Each folder holds the examples of one part. Everything here has been run on the lab described
 below before it was committed.
