@@ -6,6 +6,5 @@
     "addresses": {
         "web": "172.30.0.10",
         "db": "172.30.0.11"
-    },
-    "dnsTask": "CoreDNS"
+    }
 }
