@@ -9,9 +9,7 @@
                 "type": "name-ipam",
                 "subnet": "172.30.0.0/16",
                 "routes": [
-                    {
-                        "gateway": "172.30.0.1"
-                    }
+                    { "gateway": "172.30.0.1" }
                 ]
             },
             "capabilities": {

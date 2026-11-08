@@ -90,19 +90,30 @@ $env:Path = "$env:Path;$bin"
 & "$bin\containerd.exe" config default | Set-Content (Join-Path $root 'config.toml') -Encoding ascii
 
 'nat network config'
-$conflist = [ordered]@{
-    cniVersion = '0.3.0'
-    name       = 'nat'
-    plugins    = @(
-        [ordered]@{
-            type         = 'nat'
-            master       = 'Ethernet'
-            ipam         = [ordered]@{ subnet = $Subnet; routes = @(@{ gateway = $Gateway }) }
-            capabilities = [ordered]@{ portMappings = $true; dns = $true }
+# The same file as 0-containerd-nat.conflist next to this script, with the subnet and gateway
+# from the parameters. A here-string keeps the JSON indented the way it is in the article.
+@"
+{
+    "cniVersion": "0.3.0",
+    "name": "nat",
+    "plugins": [
+        {
+            "type": "nat",
+            "master": "Ethernet",
+            "ipam": {
+                "subnet": "$Subnet",
+                "routes": [
+                    { "gateway": "$Gateway" }
+                ]
+            },
+            "capabilities": {
+                "portMappings": true,
+                "dns": true
+            }
         }
-    )
+    ]
 }
-$conflist | ConvertTo-Json -Depth 6 | Set-Content "$cni\conf\0-containerd-nat.conflist" -Encoding ascii
+"@ | Set-Content "$cni\conf\0-containerd-nat.conflist" -Encoding ascii
 
 'containerd service'
 if (-not (Get-Service containerd -ErrorAction SilentlyContinue)) {

@@ -31,6 +31,18 @@ $ProgressPreference = 'SilentlyContinue'
 $dir = 'C:\coredns'
 New-Item -ItemType Directory $dir -Force | Out-Null
 
+# Windows PowerShell 5.1 indents ConvertTo-Json output unevenly; re-indent it by four spaces.
+function Format-Json([string] $Json) {
+    $level = 0
+    $lines = foreach ($l in $Json -split "`r?`n") {
+        $line = $l.Trim() -replace '^("[^"]*"):\s+', '$1: '
+        if ($line -match '^[\]\}]') { $level-- }
+        ('    ' * $level) + $line
+        if ($line -match '[\{\[]$') { $level++ }
+    }
+    ($lines -join "`r`n") + "`r`n"
+}
+
 'CoreDNS'
 $zip = "coredns_${Version}_windows_amd64.zip"
 $url = "https://github.com/coredns/coredns/releases/download/v$Version"
@@ -74,10 +86,10 @@ Register-ScheduledTask -TaskName CoreDNS -Action $action -Settings $settings `
 $ipamConfig = 'C:\ProgramData\name-ipam\config.json'
 $c = [IO.File]::ReadAllText($ipamConfig) | ConvertFrom-Json
 $c | Add-Member -NotePropertyName dnsTask -NotePropertyValue 'CoreDNS' -Force
-[IO.File]::WriteAllText($ipamConfig, ($c | ConvertTo-Json -Depth 4))
+[IO.File]::WriteAllText($ipamConfig, (Format-Json ($c | ConvertTo-Json -Depth 4)))
 
 'nat network config'
 $conflist = "$env:ProgramFiles\containerd\cni\conf\0-containerd-nat.conflist"
 $cfg = [IO.File]::ReadAllText($conflist) | ConvertFrom-Json
 $cfg.plugins[0] | Add-Member -NotePropertyName dns -NotePropertyValue ([ordered]@{ nameservers = @($Gateway) }) -Force
-[IO.File]::WriteAllText($conflist, ($cfg | ConvertTo-Json -Depth 6))
+[IO.File]::WriteAllText($conflist, (Format-Json ($cfg | ConvertTo-Json -Depth 6)))
