@@ -1,0 +1,15 @@
+{
+    "ociVersion": "1.1.0",
+    "hostname": "byhand",
+    "process": {
+        "args": [ "cmd", "/c", "ver & hostname & echo %USERNAME% & dir C:\\" ],
+        "cwd": "C:\\",
+        "user": { "username": "ContainerUser" }
+    },
+    "windows": {
+        "layerFolders": [
+            "C:\\lab\\layers\\nanoserver",
+            "C:\\lab\\scratch\\byhand"
+        ]
+    }
+}
