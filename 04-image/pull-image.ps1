@@ -11,6 +11,7 @@
     Result in -Dir:
       blobs\sha256\<hex>   the manifest, the config and the compressed layers as downloaded
       layers\<diff_id>     one imported layer per folder
+      manifest.json        the image manifest
       image.json           the image config
       layers.json          the layer folders from the top layer down to the base layer,
                            the order wclayer -l and HCS expect
@@ -24,6 +25,8 @@
 param(
     [Parameter(Mandatory)] [string] $Image,
     [Parameter(Mandatory)] [string] $Dir,
+    # The Windows build to pick from an index; by default the build of this host.
+    [string] $Build = (Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion').CurrentBuild,
     [string] $Wclayer = 'C:\hcs\wclayer.exe'
 )
 
@@ -40,6 +43,8 @@ $registry = $Matches.reg
 $repo = $Matches.repo
 $ref = if ($Matches.digest) { $Matches.digest } elseif ($Matches.tag) { $Matches.tag } else { 'latest' }
 if ($registry -eq 'docker.io') { $registry = 'registry-1.docker.io'; if ($repo -notmatch '/') { $repo = "library/$repo" } }
+# A registry on this machine (part 7) speaks plain HTTP; everything else is HTTPS.
+$scheme = if ($registry -match '^(localhost|127\.0\.0\.1)(:\d+)?$') { 'http' } else { 'https' }
 
 $blobDir = Join-Path $Dir 'blobs\sha256'
 New-Item -ItemType Directory $blobDir, (Join-Path $Dir 'layers') -Force | Out-Null
@@ -49,7 +54,7 @@ function Get-Sha256([string] $path) { 'sha256:' + (Get-FileHash $path -Algorithm
 
 # GET from the registry into a file; on 401 fetch an anonymous bearer token once and retry.
 function Invoke-Registry([string] $path, [string] $accept, [string] $outFile) {
-    $url = "https://$registry/v2/$repo/$path"
+    $url = "${scheme}://$registry/v2/$repo/$path"
     $hdr = "$outFile.hdr"
     for ($try = 0; $try -lt 2; $try++) {
         $curlArgs = @('-sL', '-o', $outFile, '-D', $hdr, '-w', '%{http_code}')
@@ -83,20 +88,22 @@ $tmp = Join-Path $blobDir 'ref.tmp'
 Invoke-Registry "manifests/$ref" (($indexTypes + $manifestTypes) -join ', ') $tmp
 $doc = Get-Content $tmp -Raw | ConvertFrom-Json
 $digest = Get-Sha256 $tmp
-Move-Item $tmp (Join-Path $blobDir ($digest -replace '^sha256:')) -Force
+$manifestFile = Join-Path $blobDir ($digest -replace '^sha256:')
+Move-Item $tmp $manifestFile -Force
 
 if ($indexTypes -contains $doc.mediaType) {
     # Process isolation needs the same build as the host: 10.0.26100.* on Windows Server 2025.
-    $build = (Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion').CurrentBuild
     $m = $doc.manifests |
-        Where-Object { $_.platform.os -eq 'windows' -and $_.platform.architecture -eq 'amd64' -and $_.platform.'os.version' -like "10.0.$build.*" } |
+        Where-Object { $_.platform.os -eq 'windows' -and $_.platform.architecture -eq 'amd64' -and $_.platform.'os.version' -like "10.0.$Build.*" } |
         Sort-Object { [version]$_.platform.'os.version' } | Select-Object -Last 1
-    if (-not $m) { throw "no windows/amd64 manifest for build $build in $Image" }
+    if (-not $m) { throw "no windows/amd64 manifest for build $Build in $Image" }
     Write-Host "index $digest -> $($m.platform.'os.version') $($m.digest)"
-    $doc = Get-Content (Get-Blob $m.digest $m.mediaType 'manifests') -Raw | ConvertFrom-Json
+    $manifestFile = Get-Blob $m.digest $m.mediaType 'manifests'
+    $doc = Get-Content $manifestFile -Raw | ConvertFrom-Json
 }
 
 # 2. The manifest names the config and the layers, the config lists the diff_ids.
+Copy-Item $manifestFile (Join-Path $Dir 'manifest.json') -Force
 $configFile = Get-Blob $doc.config.digest $doc.config.mediaType
 Copy-Item $configFile (Join-Path $Dir 'image.json') -Force
 $config = Get-Content $configFile -Raw | ConvertFrom-Json

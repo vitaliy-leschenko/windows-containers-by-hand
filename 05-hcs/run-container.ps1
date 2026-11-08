@@ -13,7 +13,7 @@
       3. the HCS document of the compute system: layers, volume, mapped folders, memory and
          processor limits, namespace (hcsctl create);
       4. the process from the image config: entrypoint and command, working directory, user,
-         environment (hcsctl exec -d).
+         environment (hcsctl exec -d, or hcsctl exec with its output when -Attach is given).
 
     What the script created is recorded in C:\containers\<name>\state.json for remove-container.ps1.
 
@@ -32,6 +32,8 @@ param(
     [string[]] $Mount = @(),
     [int] $Memory = 0,
     [int] $Cpus = 0,
+    # Wait for the process and copy its output instead of leaving it running in the background.
+    [switch] $Attach,
     [string] $Root = 'C:\containers',
     [string] $Hcsctl = 'C:\hcs\hcsctl.exe',
     [string] $Wclayer = 'C:\hcs\wclayer.exe'
@@ -100,6 +102,12 @@ $process = [ordered]@{
     User = if ($config.User) { $config.User } else { 'ContainerUser' }
     Environment = $environment
 }
+if ($Attach) { $process.CreateStdOutPipe = $true; $process.CreateStdErrPipe = $true }
 $process | ConvertTo-Json | Set-Content (Join-Path $dir 'process.json') -Encoding ascii
-& $Hcsctl exec -d $Name (Join-Path $dir 'process.json')
-if ($LASTEXITCODE) { throw 'hcsctl exec failed' }
+if ($Attach) {
+    & $Hcsctl exec $Name (Join-Path $dir 'process.json')
+    Write-Host "exit code $LASTEXITCODE"
+} else {
+    & $Hcsctl exec -d $Name (Join-Path $dir 'process.json')
+    if ($LASTEXITCODE) { throw 'hcsctl exec failed' }
+}
