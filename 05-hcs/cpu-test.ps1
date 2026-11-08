@@ -25,7 +25,8 @@ $work = New-Item -ItemType Directory (Join-Path $env:TEMP "$id-docs")
 & $Wclayer create -l $Base $scratch
 $volume = (& $Wclayer mount -l $Base $scratch | Out-String).Trim()
 $container = [ordered]@{
-    Storage = [ordered]@{ Layers = @([ordered]@{ Id = (& $Hcsctl layer-id $Base); Path = $Base }); Path = $volume }
+    GuestOs = @{ HostName = 'cpu-test' }
+    Storage =[ordered]@{ Layers = @([ordered]@{ Id = (& $Hcsctl layer-id $Base); Path = $Base }); Path = $volume }
 }
 if ($Cpus) { $container.Processor = @{ Count = $Cpus } }
 [ordered]@{

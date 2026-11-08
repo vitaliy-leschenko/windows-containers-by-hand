@@ -96,6 +96,8 @@ Write-Host "compute system $Name"
 $config = (Get-Content (Join-Path $Image 'image.json') -Raw | ConvertFrom-Json).config
 $environment = [ordered]@{}
 foreach ($e in @($config.Env)) { if ($e) { $k, $v = $e -split '=', 2; $environment[$k] = $v } }
+# GuestOs.HostName also sets COMPUTERNAME, but in upper case and cut to 15 characters.
+if ($Name.Length -gt 15) { $environment['COMPUTERNAME'] = $Name }
 $process = [ordered]@{
     CommandLine = (@($config.Entrypoint) + @($config.Cmd) | Where-Object { $_ }) -join ' '
     WorkingDirectory = if ($config.WorkingDir) { $config.WorkingDir } else { 'C:\' }
