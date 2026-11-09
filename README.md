@@ -14,6 +14,8 @@ containers without Docker, going one layer down at a time:
 6. Hyper-V isolation from the inside: the utility VM, its kernel from the image, a 2019 image on 2025.
 7. An image without Docker: a layer from a folder with `wclayer export`, an OCI image layout with
    an index per `os.version`, a push with the OCI distribution API to a registry built from source.
+8. HostProcess containers: a container without HCS, a job object, `C:\hpc`, the base image of empty
+   registry hives, and an image built with `tar` and loaded with `nerdctl load`.
 
 Each folder holds the examples of one part. Everything here has been run on the lab described
 below before it was committed.
